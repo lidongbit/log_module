@@ -76,11 +76,13 @@ int main (int argc, char*argv[])
    while(1)
    {
       i++;
-      Log_info("hello:%d %x %f %s",i,i,3.14,"happy new year!");
+      Log_info("hello:%d",i);
       printf("i:%d\n",i);
-      usleep(1000000);
+      usleep(10000);
 
-      if(i>5)
+      if(i==4095)
+          continue;
+      if(i>4097)
          break;
    }
 #ifdef TEST_SHM

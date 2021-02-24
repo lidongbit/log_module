@@ -50,10 +50,6 @@ int32_t Force_Push_CircleBuff(void *push_ptr,int32_t length)
     printf("head:%d tail:%d\n",circle_buff_info->head_index_offset,circle_buff_info->tail_index_offset);
 		if(delta_offset>=0)
 		{
-            /*
-             * |   r*****w|
-             *
-             */
             if((circle_buff_info->tail_index_offset+length)>=MESAGE_BUFF_LENGTH)
 			{
 				memcpy(mesg_buff+circle_buff_info->tail_index_offset,push_ptr

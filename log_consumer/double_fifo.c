@@ -45,7 +45,7 @@ void copy_buff()
     iw = in_buff_info.tail_index_offset;
     or = local_buff.r;
     ow = local_buff.w;
-    //printf("ir,iw,or,ow:%d %d %d %d\r\n",ir,iw,or,ow);
+    printf("ir,iw,or,ow:%d %d %d %d\r\n",ir,iw,or,ow);
     if(ir<iw)
     {
         if((LOCAL_BUFF_SIZE-ow)>(iw-ir))
@@ -73,7 +73,7 @@ void copy_buff()
         local_buff.w = (local_buff.w+(iw-ir))%LOCAL_BUFF_SIZE;
 
     }else{
-        if((LOCAL_BUFF_SIZE-ow)>(REMOTE_BUFF_SIZE-ir+iw))
+        if((LOCAL_BUFF_SIZE-ow)>=(REMOTE_BUFF_SIZE-ir+iw))
         {
             /*
              * in      |+++W     R---|
@@ -83,7 +83,7 @@ void copy_buff()
             memcpy(&local_buff.buff[ow], &in_buff[ir], (REMOTE_BUFF_SIZE-ir));
             memcpy(&local_buff.buff[ow+(REMOTE_BUFF_SIZE-ir)], &in_buff[0], iw);
 
-        }else if((LOCAL_BUFF_SIZE-ow)>(REMOTE_BUFF_SIZE-ir)){
+        }else if((LOCAL_BUFF_SIZE-ow)>=(REMOTE_BUFF_SIZE-ir)){
             /*
              * in      |+++W     R---|
              * local   |        W    |
@@ -127,7 +127,7 @@ void print_item(DEBUG_INFO_t* info)
     int count = 0;
 
     unsigned int temp_u;
-    int temp_d;
+    int temp_d,temp_d_hist;
     unsigned int temp_x;
     double temp_f;
     long long temp_l;
@@ -158,8 +158,13 @@ void print_item(DEBUG_INFO_t* info)
                         memcpy((char*)(&temp_d),info->debug_data+count,4);
                         printf("%d",temp_d);
                         fflush(stdout);
+                        if(temp_d-temp_d_hist!=1)
+                        {
+                            temp_d_hist = 0;
+                        }
                         str++;
                         count += 4;
+                        temp_d_hist = temp_d;
                         break;
                     }
                     case 'x':

@@ -15,6 +15,24 @@
 #define TEST_MMAP
 //#define TEST_SHM
 
+DEBUG_RINGS_BUFF_STRUCT *map_ctrl;
+char *map_msg;
+
+static void log_end(void)
+{
+#ifdef TEST_SHM
+   if(shmdt(shm_ctrl) == -1 || shmdt(shm_msg) == -1)
+   {
+      fprintf(stderr, "shmdt failed\n");
+      exit(EXIT_FAILURE);
+   }
+#endif
+#ifdef TEST_MMAP
+   munmap( map_ctrl, sizeof(DEBUG_RINGS_BUFF_STRUCT) );
+   munmap( map_msg, 1024*1024);
+   printf( "umap ok \n" );
+#endif
+}
 int main (int argc, char *argv[])
 {
 #ifdef TEST_SHM
@@ -47,8 +65,6 @@ int main (int argc, char *argv[])
 #endif
 #ifdef TEST_MMAP
    int fd_ctrl,fd_msg,i;
-   DEBUG_RINGS_BUFF_STRUCT *map_ctrl;
-   char *map_msg;
 
    if(argc!=3)
    {
@@ -76,20 +92,9 @@ int main (int argc, char *argv[])
    {
       copy_buff();
       print_buff();
-      usleep(500000);      
+      usleep(50000);
    }
-#ifdef TEST_SHM
-   if(shmdt(shm_ctrl) == -1 || shmdt(shm_msg) == -1)   
-   {      
-      fprintf(stderr, "shmdt failed\n");     
-      exit(EXIT_FAILURE);
-   }
-#endif
-#ifdef TEST_MMAP
-   munmap( map_ctrl, sizeof(DEBUG_RINGS_BUFF_STRUCT) );
-   munmap( map_msg, 1024*1024);
-   printf( "umap ok \n" );
-#endif
+   atexit(log_end);
    sleep(2);  
    exit(EXIT_SUCCESS);
    return 0;
