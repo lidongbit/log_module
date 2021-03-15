@@ -32,9 +32,11 @@ static void log_end(void)
    munmap( map_msg, 1024*1024);
    printf( "umap ok \n" );
 #endif
+   close_log_file();
 }
 int main (int argc, char *argv[])
 {
+   open_log_file();
 #ifdef TEST_SHM
    int i;
    //char *ctr,*msg;

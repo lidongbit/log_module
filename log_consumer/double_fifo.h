@@ -27,5 +27,8 @@ extern void buff_init(void *ctr, void *msg);
 extern void copy_buff(void);
 extern void print_buff(void);
 extern void print_item(DEBUG_INFO_t* info);
+extern void write_item(DEBUG_INFO_t* info);
+extern int open_log_file(void);
+extern void close_log_file(void);
 
 #endif

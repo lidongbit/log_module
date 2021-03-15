@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <time.h>
+#include <fcntl.h>           /* Definition of AT_* constants */
+#include <unistd.h>
 
 static char *in_buff;
 static DEBUG_INFO_t* temp_item_ptr;
@@ -12,6 +15,9 @@ static DEBUG_RINGS_BUFF_STRUCT *in_buff_info_ptr;
 static DEBUG_RINGS_BUFF_STRUCT in_buff_info;
 #define LOCAL_BUFF_SIZE (1024*1024)
 #define REMOTE_BUFF_SIZE (1024*1024)
+
+static char log_name[128];
+FILE *log_file = NULL;
 
 typedef struct{
     char buff[LOCAL_BUFF_SIZE];
@@ -32,6 +38,38 @@ void buff_init(void *ctr, void *msg)
     in_buff_info_ptr = (DEBUG_RINGS_BUFF_STRUCT *)(ctr);
 }
 
+int check_log_dir(void)
+{
+    if(access("/tmp/log/", F_OK) == 0) return 0;
+
+    if(system("mkdir -p /tmp/log/"))
+    {
+        perror("system");
+        exit(0);
+    }
+}
+
+int open_log_file(void)
+{
+    char file_time[32] = "";
+    char file_name[128] = "/tmp/log";
+
+    time_t t = time(NULL);
+    struct tm *t_now = localtime(&t);
+    strftime(file_time, sizeof(file_time), "%Y%m%d%H%M%S.log", t_now);
+    strcat(file_name, file_time);
+
+    check_log_dir();
+    log_file = fopen(file_name, "a+");
+    if(NULL == log_file)
+    {
+        perror("fopen");
+        exit(0);
+    }
+    strcpy(log_name, file_name);
+    return 0;
+}
+
 void copy_buff()
 {
     int ir;
@@ -45,7 +83,7 @@ void copy_buff()
     iw = in_buff_info.tail_index_offset;
     or = local_buff.r;
     ow = local_buff.w;
-    printf("ir,iw,or,ow:%d %d %d %d\r\n",ir,iw,or,ow);
+    //printf("ir,iw,or,ow:%d %d %d %d\r\n",ir,iw,or,ow);
     if(ir<iw)
     {
         if((LOCAL_BUFF_SIZE-ow)>(iw-ir))
@@ -125,19 +163,24 @@ void print_item(DEBUG_INFO_t* info)
 {
     char* str = (char*)(&info->string_name);
     int count = 0;
-
     unsigned int temp_u;
     int temp_d,temp_d_hist;
     unsigned int temp_x;
     double temp_f;
     long long temp_l;
     char s[128]={0};
+    int write_flag = 0;
     //printf("print_item:%s\r\n",str);
+    if(strncmp(str,"INFO ",6))
+    {
+       write_flag = 1;
+    }
     while('\0' != *str)
     {
        if('%' != *str)
        {
             //putchar(str++);
+           if(write_flag)   { fprintf(log_file,"%c",*str); }
            printf("%c",*str++);
            fflush(stdout);
            continue;
@@ -147,6 +190,7 @@ void print_item(DEBUG_INFO_t* info)
                     case 'u':
                     {
                         memcpy((char*)(&temp_u),info->debug_data+count,4);
+                        if(write_flag)   { fprintf(log_file,"%u",temp_u); }
                         printf("%u",temp_u);
                         fflush(stdout);
                         str++;
@@ -156,6 +200,7 @@ void print_item(DEBUG_INFO_t* info)
                     case 'd':
                     {
                         memcpy((char*)(&temp_d),info->debug_data+count,4);
+                        if(write_flag)   { fprintf(log_file,"%d",temp_d); }
                         printf("%d",temp_d);
                         fflush(stdout);
                         if(temp_d-temp_d_hist!=1)
@@ -170,6 +215,7 @@ void print_item(DEBUG_INFO_t* info)
                     case 'x':
                     {
                         memcpy((char*)(&temp_x),info->debug_data+count,4);
+                        if(write_flag)    { fprintf(log_file,"%x",temp_x); }
                         printf("%x",temp_x);
                         fflush(stdout);
                         str++;
@@ -179,6 +225,7 @@ void print_item(DEBUG_INFO_t* info)
                     case 'f':
                     {
                         memcpy((char*)(&temp_f),info->debug_data+count,8);
+                        if(write_flag)    { fprintf(log_file,"%lf",temp_f); }
                         printf("%lf",temp_f);
                         fflush(stdout);
                         str++;
@@ -188,7 +235,8 @@ void print_item(DEBUG_INFO_t* info)
                     case 'l':
                     {
                         memcpy((char*)(&temp_l),info->debug_data+count,8);
-                        printf("%l",temp_l);
+                        if(write_flag)    { fprintf(log_file,"%lld",temp_l); }
+                        printf("%lld",temp_l);
                         fflush(stdout);
                         str++;
                         count += 8;
@@ -197,6 +245,7 @@ void print_item(DEBUG_INFO_t* info)
                     case 's':
                     {
                         memcpy(s,info->debug_data+count,strlen(info->debug_data+count));
+                        if(write_flag)    { fprintf(log_file,"%s",s); }
                         printf("%s",s);
                         fflush(stdout);
                         str++;
@@ -207,7 +256,11 @@ void print_item(DEBUG_INFO_t* info)
                 }
             }
     }
-
+    //fflush(stdout);
+    fflush(log_file);
 }
-
-
+void close_log_file()
+{
+    fflush(log_file);
+    fclose(log_file);
+}
