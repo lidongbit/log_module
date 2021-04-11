@@ -8,7 +8,7 @@
 #include "Force_Log.h"
 #include <string.h>
 #include <sys/shm.h>
-
+#include "buffer_manager.h"
 //#define TEST_SHM
 #define TEST_MMAP
 
@@ -48,7 +48,7 @@ int main (int argc, char*argv[])
 #endif
 #ifdef TEST_MMAP
    int fd_ctrl,fd_msg,i;
-   FORCE_DEBUG_RINGS_BUFF_STRUCT *map_ctrl;
+   buffer_info_t *map_ctrl;
    char *map_msg;
 
    if(argc!=3)
@@ -60,12 +60,12 @@ int main (int argc, char*argv[])
    fd_ctrl = open(argv[1],O_CREAT|O_RDWR|O_TRUNC,00777);
    fd_msg = open(argv[2],O_CREAT|O_RDWR|O_TRUNC,00777);
 
-   lseek(fd_ctrl,sizeof(FORCE_DEBUG_RINGS_BUFF_STRUCT),SEEK_SET);
+   lseek(fd_ctrl,sizeof(buffer_info_t),SEEK_SET);
    write(fd_ctrl,"1",1);
    lseek(fd_msg,1024*1024,SEEK_SET);
    write(fd_msg,"1",1);
 
-   map_ctrl = (FORCE_DEBUG_RINGS_BUFF_STRUCT*) mmap( NULL,sizeof(FORCE_DEBUG_RINGS_BUFF_STRUCT),PROT_READ|PROT_WRITE,MAP_SHARED,fd_ctrl,0 );
+   map_ctrl = (buffer_info_t*) mmap( NULL,sizeof(buffer_info_t),PROT_READ|PROT_WRITE,MAP_SHARED,fd_ctrl,0 );
    map_msg = (char*) mmap( NULL,1024*1024,PROT_READ|PROT_WRITE,MAP_SHARED,fd_msg,0 );
 
    close(fd_ctrl);
@@ -80,9 +80,7 @@ int main (int argc, char*argv[])
       printf("i:%d\n",i);
       usleep(10000);
 
-      if(i==4095)
-          continue;
-      if(i>4097)
+      if(i>10)
          break;
    }
 #ifdef TEST_SHM
@@ -93,7 +91,7 @@ int main (int argc, char*argv[])
    }  
 #endif
 #ifdef TEST_MMAP
-   munmap( map_ctrl, sizeof(FORCE_DEBUG_RINGS_BUFF_STRUCT) );
+   munmap( map_ctrl, sizeof(buffer_info_t) );
    munmap( map_msg, 1024*1024);
    printf( "umap ok \n" );
 #endif

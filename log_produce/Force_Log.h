@@ -53,17 +53,6 @@ typedef struct
 
 }FORCE_DEBUG_INFO_t;
 
-typedef struct
-{
-	int32_t tail_index_offset;
-	int32_t head_index_offset;
-	int32_t element_length;
-	int32_t safety_resevd;
-	int32_t semaphore;//初始化需要置位1
-	int32_t write_lock;
-
-}FORCE_DEBUG_RINGS_BUFF_STRUCT;
-
 extern void Force_Debug_Init(void* ctr_ptr,void* msg_ptr);
 
 extern void Force_Print(const char* str,...);

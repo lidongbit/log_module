@@ -3,11 +3,12 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "Force_Log.h"
+#include "buffer_manager.h"
 #include <unistd.h>
 
 #define MESAGE_BUFF_LENGTH 1*1024*1024
 //static volatile unsigned int* led_con_ps = (volatile unsigned int*)(0xe000a000);
-
+typedef buffer_info_t FORCE_DEBUG_RINGS_BUFF_STRUCT;
 static char *mesg_buff;
 
 static FORCE_DEBUG_INFO_t temp_var_info;
@@ -31,6 +32,7 @@ void Force_Debug_Init(void *ctr_ptr,void* msg_ptr)
     circle_buff_info->head_index_offset = 0;
 	circle_buff_info->element_length = sizeof(FORCE_DEBUG_INFO_t);
 	circle_buff_info->safety_resevd = 2*circle_buff_info->element_length;
+    circle_buff_info->buff_length = MESAGE_BUFF_LENGTH;
 	circle_buff_info->write_lock = 0;
 
 }
@@ -42,38 +44,8 @@ void Force_Debug_Init(void *ctr_ptr,void* msg_ptr)
  * ------------------------------------------------------------------*/
 int32_t Force_Push_CircleBuff(void *push_ptr,int32_t length)
 {
-	int32_t delta_offset = 0;
-
 	int32_t ret_val = 0;
-
-    delta_offset = (circle_buff_info->tail_index_offset)-(circle_buff_info->head_index_offset);
-    printf("head:%d tail:%d\n",circle_buff_info->head_index_offset,circle_buff_info->tail_index_offset);
-		if(delta_offset>=0)
-		{
-            /*
-             * |   r*****w|
-             *
-             */
-            if((circle_buff_info->tail_index_offset+length)>=MESAGE_BUFF_LENGTH)
-			{
-				memcpy(mesg_buff+circle_buff_info->tail_index_offset,push_ptr
-						,(MESAGE_BUFF_LENGTH-circle_buff_info->tail_index_offset));
-
-				memcpy(mesg_buff,push_ptr+(circle_buff_info->tail_index_offset+length-MESAGE_BUFF_LENGTH)
-						,length-(MESAGE_BUFF_LENGTH-circle_buff_info->tail_index_offset));
-
-				circle_buff_info->tail_index_offset =
-							length-(MESAGE_BUFF_LENGTH-circle_buff_info->tail_index_offset);
-			}else{
-				memcpy(mesg_buff+circle_buff_info->tail_index_offset,push_ptr,length);
-				circle_buff_info->tail_index_offset += circle_buff_info->element_length;
-			}
-
-		}else{
-				memcpy(mesg_buff+circle_buff_info->tail_index_offset,push_ptr,length);
-				circle_buff_info->tail_index_offset += circle_buff_info->element_length;
-		}
-
+    ret_val = push_circle_buff_item(circle_buff_info,mesg_buff,push_ptr);
 	return ret_val;
 }
 /*--------------------------------------------------------------------

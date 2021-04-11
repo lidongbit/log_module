@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.2, 2021-02-23T22:33:33. -->
+<!-- Written by QtCreator 4.12.2, 2021-04-11T18:34:44. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -306,8 +306,9 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/Users/lidong/work_ld/log_module/log_produce_test/log_produce/log_produce.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/Users/lidong/work_ld/log_module/log_produce_test/log_produce/log_produce.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">log_produce2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/Users/lidong/work_ld/git_local/log_module/log_produce_test/log_produce/log_produce.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/Users/lidong/work_ld/git_local/log_module/log_produce_test/log_produce/log_produce.pro</value>
     <value type="QString" key="RunConfiguration.Arguments">/tmp/f1
 /tmp/f2</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">true</value>

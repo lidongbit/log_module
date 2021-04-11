@@ -4,17 +4,13 @@
 /*push one item per operation*/
 int32_t push_circle_buff_item(buffer_info_t *circle_buff_info, void *circle_buff, void *push_ptr)
 {
-    int32_t delta_offset = 0;
-
-    int32_t ret_val = 0;
-
     if(is_buff_full(circle_buff_info))
     {
         return -1;
     }
 
     memcpy(circle_buff+circle_buff_info->tail_index_offset,push_ptr,circle_buff_info->element_length);
-    circle_buff_info->tail_index_offset = (circle_buff_info->tail_index_offset + 1)%circle_buff_info->buff_length;
+    circle_buff_info->tail_index_offset = (circle_buff_info->tail_index_offset + circle_buff_info->element_length)%circle_buff_info->buff_length;
     return circle_buff_info->element_length;
 }
 
@@ -201,8 +197,7 @@ int32_t pull_circle_buff_bundle(buffer_info_t *circle_buff_info, void *circle_bu
 
 int32_t is_buff_full(buffer_info_t *circle_buff_info)
 {
-    if(((circle_buff_info->tail_index_offset+circle_buff_info->element_length)
-            %circle_buff_info->buff_length) == circle_buff_info->head_index_offset)
+    if(((circle_buff_info->tail_index_offset+circle_buff_info->element_length)%circle_buff_info->buff_length) == circle_buff_info->head_index_offset)
     {
         return 1;
     }
