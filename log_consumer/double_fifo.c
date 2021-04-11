@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-
+#include "buffer_manager.h"
+typedef buffer_info_t DEBUG_RINGS_BUFF_STRUCT;
 static char *in_buff;
 static DEBUG_INFO_t* temp_item_ptr;
 static DEBUG_RINGS_BUFF_STRUCT *in_buff_info_ptr;
@@ -13,20 +14,17 @@ static DEBUG_RINGS_BUFF_STRUCT in_buff_info;
 #define LOCAL_BUFF_SIZE (1024*1024)
 #define REMOTE_BUFF_SIZE (1024*1024)
 
-typedef struct{
-    char buff[LOCAL_BUFF_SIZE];
-    int r;
-    int w;
-    int lost;
-}LOCAL_BUFF_t;
 
-static LOCAL_BUFF_t local_buff;
+static DEBUG_RINGS_BUFF_STRUCT local_buff;
+static char buff[LOCAL_BUFF_SIZE];
 
 void buff_init(void *ctr, void *msg)
 {
-    local_buff.r=0;
-    local_buff.w=0;
-    local_buff.lost=0;
+    local_buff.head_index_offset=0;
+    local_buff.tail_index_offset=0;
+    local_buff.element_length=sizeof(DEBUG_INFO_t);
+    local_buff.buff_length = LOCAL_BUFF_SIZE;
+    local_buff.semaphore = 1;
 
     in_buff = (char *)(msg);
     in_buff_info_ptr = (DEBUG_RINGS_BUFF_STRUCT *)(ctr);
@@ -34,90 +32,18 @@ void buff_init(void *ctr, void *msg)
 
 void copy_buff()
 {
-    int ir;
-    int iw;
-    int or;
-    int ow;
-
-    memcpy(&in_buff_info, in_buff_info_ptr, sizeof(DEBUG_RINGS_BUFF_STRUCT));
-    
-    ir = in_buff_info.head_index_offset;
-    iw = in_buff_info.tail_index_offset;
-    or = local_buff.r;
-    ow = local_buff.w;
-    printf("ir,iw,or,ow:%d %d %d %d\r\n",ir,iw,or,ow);
-    if(ir<iw)
-    {
-        if((LOCAL_BUFF_SIZE-ow)>(iw-ir))
-        {
-            /*
-             * in      |    R------W |temp_var_info
-             * local   |   W         |
-             * res     |   -------W  |
-             */
-            //printf("buff_len:%d,data_len:%d\r\n",1024*1024,iw-ir);
-            memcpy(&(local_buff.buff[ow]), &in_buff[ir], (iw-ir));
-            //printf("memcpy!\r\n");
-
-        }else{
-            /*
-             * in      |    R------W |
-             * local   |        W    |
-             * res     |-W      -----|
-             */
-            memcpy(&local_buff.buff[ow], &in_buff[ir], (LOCAL_BUFF_SIZE-ow));
-            memcpy(&local_buff.buff[0], &in_buff[ir+(LOCAL_BUFF_SIZE-ow)], iw-ir-(LOCAL_BUFF_SIZE-ow));
-
-        }
-        in_buff_info_ptr->head_index_offset = in_buff_info.tail_index_offset;
-        local_buff.w = (local_buff.w+(iw-ir))%LOCAL_BUFF_SIZE;
-
-    }else{
-        if((LOCAL_BUFF_SIZE-ow)>=(REMOTE_BUFF_SIZE-ir+iw))
-        {
-            /*
-             * in      |+++W     R---|
-             * local   |      W      |
-             * res     |      ---+++W|
-             */
-            memcpy(&local_buff.buff[ow], &in_buff[ir], (REMOTE_BUFF_SIZE-ir));
-            memcpy(&local_buff.buff[ow+(REMOTE_BUFF_SIZE-ir)], &in_buff[0], iw);
-
-        }else if((LOCAL_BUFF_SIZE-ow)>=(REMOTE_BUFF_SIZE-ir)){
-            /*
-             * in      |+++W     R---|
-             * local   |        W    |
-             * res     |+W      ---++|
-             */
-            memcpy(&local_buff.buff[ow], &in_buff[ir], (REMOTE_BUFF_SIZE-ir));
-            memcpy(&local_buff.buff[ow+(REMOTE_BUFF_SIZE-ir)], &in_buff[0], (LOCAL_BUFF_SIZE-ow)-(REMOTE_BUFF_SIZE-ir));
-            memcpy(&local_buff.buff[0], &in_buff[(LOCAL_BUFF_SIZE-ow)-(REMOTE_BUFF_SIZE-ir)], (REMOTE_BUFF_SIZE-ir+iw)-(LOCAL_BUFF_SIZE-ow));
-
-        }else if((LOCAL_BUFF_SIZE-ow)<(REMOTE_BUFF_SIZE-ir)){
-            /*
-             * in      |+++W     R---|
-             * local   |           W |
-             * res     |-+++W      --|
-             */
-            memcpy(&local_buff.buff[ow], &in_buff[ir], (LOCAL_BUFF_SIZE-ow));
-            memcpy(&local_buff.buff[0], &in_buff[ir+(LOCAL_BUFF_SIZE-ow)], (REMOTE_BUFF_SIZE-ir)-(LOCAL_BUFF_SIZE-ow));
-            memcpy(&local_buff.buff[(REMOTE_BUFF_SIZE-ir)-(LOCAL_BUFF_SIZE-ow)], &in_buff[0], iw);
-
-        }
-        in_buff_info_ptr->head_index_offset = in_buff_info.tail_index_offset;
-        local_buff.w = (local_buff.w+(REMOTE_BUFF_SIZE-ir+iw))%LOCAL_BUFF_SIZE;
-    }
+    pull_circle_buff_bundle(in_buff_info_ptr,in_buff,&local_buff,buff);
 
 }
 
 void print_buff(void)
 {
-    while(local_buff.r != local_buff.w)
+    while(local_buff.head_index_offset != local_buff.tail_index_offset)
     {
         //printf("local_buff.r:%d local_buff.w:%d\r\n",local_buff.r,local_buff.w);
-        temp_item_ptr = (DEBUG_INFO_t*)(&local_buff.buff[local_buff.r]);
+        temp_item_ptr = (DEBUG_INFO_t*)(&buff[local_buff.head_index_offset]);
         print_item(temp_item_ptr);
-        local_buff.r = (local_buff.r+sizeof(DEBUG_INFO_t))%LOCAL_BUFF_SIZE;
+        local_buff.head_index_offset = (local_buff.head_index_offset+sizeof(DEBUG_INFO_t))%LOCAL_BUFF_SIZE;
     }
 }
 

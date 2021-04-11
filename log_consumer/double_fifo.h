@@ -12,16 +12,6 @@ typedef struct
 }DEBUG_INFO_t;
 
 typedef int int32_t;
-typedef struct
-{
-        int32_t tail_index_offset;
-        int32_t head_index_offset;
-        int32_t element_length;
-        int32_t safety_resevd;
-        int32_t semaphore;//初始化需要置位1
-        int32_t write_lock;
-
-}DEBUG_RINGS_BUFF_STRUCT;
 
 extern void buff_init(void *ctr, void *msg);
 extern void copy_buff(void);

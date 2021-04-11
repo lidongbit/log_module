@@ -8,14 +8,14 @@
 #include "double_fifo.h"
 #include <string.h>
 #include <sys/shm.h>
-
+#include "buffer_manager.h"
 #define LOG_MSG_CONTROL_ADDR 0x3E000000
 #define LOG_MSG_ADDR         0x3E100000
 
 #define TEST_MMAP
 //#define TEST_SHM
 
-DEBUG_RINGS_BUFF_STRUCT *map_ctrl;
+buffer_info_t *map_ctrl;
 char *map_msg;
 
 static void log_end(void)
@@ -28,7 +28,7 @@ static void log_end(void)
    }
 #endif
 #ifdef TEST_MMAP
-   munmap( map_ctrl, sizeof(DEBUG_RINGS_BUFF_STRUCT) );
+   munmap( map_ctrl, sizeof(buffer_info_t) );
    munmap( map_msg, 1024*1024);
    printf( "umap ok \n" );
 #endif
@@ -74,12 +74,12 @@ int main (int argc, char *argv[])
    fd_ctrl = open(argv[1],O_RDWR,00777);
    fd_msg = open(argv[2],O_RDWR,00777);
 
-   lseek(fd_ctrl,sizeof(DEBUG_RINGS_BUFF_STRUCT),SEEK_SET);
+   lseek(fd_ctrl,sizeof(buffer_info_t),SEEK_SET);
    write(fd_ctrl,"1",1);
    lseek(fd_msg,1024*1024,SEEK_SET);
    write(fd_msg,"1",1);
 
-   map_ctrl = (DEBUG_RINGS_BUFF_STRUCT*) mmap( NULL,sizeof(DEBUG_RINGS_BUFF_STRUCT),PROT_READ|PROT_WRITE,MAP_SHARED,fd_ctrl,0 );
+   map_ctrl = (buffer_info_t*) mmap( NULL,sizeof(buffer_info_t),PROT_READ|PROT_WRITE,MAP_SHARED,fd_ctrl,0 );
    map_msg = (char*) mmap( NULL,1024*1024,PROT_READ|PROT_WRITE,MAP_SHARED,fd_msg,0 );
 
    close(fd_ctrl);
